@@ -13,16 +13,31 @@ import javax.json.JsonReader;
 
 public class TorrentChecker {
 
-    private static final String QB_URL = "http://localhost:8080"; // Replace with your qBittorrent Web UI URL
-    private static final String USERNAME = "admin"; // Replace with your qBittorrent Web UI username
-    private static final String PASSWORD = "password"; // Replace with your qBittorrent Web UI password
-
     public static void main(String[] args) {
+        if (args.length != 3) {
+            System.err.println("Usage: java TorrentChecker <url> <username> <password>");
+            System.exit(1);
+        }
+        
+        String qbUrl = args[0];
+        String username = args[1];
+        String password = args[2];
+        
         Timer timer = new Timer();
-        timer.schedule(new TorrentCheckTask(), 0, 10 * 60 * 1000);
+        timer.schedule(new TorrentCheckTask(qbUrl, username, password), 0, 10 * 60 * 1000);
     }
 
     static class TorrentCheckTask extends TimerTask {
+        private final String qbUrl;
+        private final String username;
+        private final String password;
+
+        public TorrentCheckTask(String qbUrl, String username, String password) {
+            this.qbUrl = qbUrl;
+            this.username = username;
+            this.password = password;
+        }
+
         @Override
         public void run() {
             try {
@@ -44,10 +59,10 @@ public class TorrentChecker {
         }
 
         private JsonArray fetchTorrents() throws IOException {
-            URL url = new URL(QB_URL + "/api/v2/torrents/info");
+            URL url = new URL(qbUrl + "/api/v2/torrents/info");
             HttpURLConnection connection = (HttpURLConnection) url.openConnection();
 
-            String auth = USERNAME + ":" + PASSWORD;
+            String auth = username + ":" + password;
             String encodedAuth = Base64.getEncoder().encodeToString(auth.getBytes());
             connection.setRequestProperty("Authorization", "Basic " + encodedAuth);
 
@@ -62,11 +77,11 @@ public class TorrentChecker {
         }
 
         private void forceRecheck(String hash) throws IOException {
-            URL url = new URL(QB_URL + "/api/v2/torrents/recheck?hashes=" + hash);
+            URL url = new URL(qbUrl + "/api/v2/torrents/recheck?hashes=" + hash);
             HttpURLConnection connection = (HttpURLConnection) url.openConnection();
             connection.setRequestMethod("POST");
 
-            String auth = USERNAME + ":" + PASSWORD;
+            String auth = username + ":" + password;
             String encodedAuth = Base64.getEncoder().encodeToString(auth.getBytes());
             connection.setRequestProperty("Authorization", "Basic " + encodedAuth);
 
